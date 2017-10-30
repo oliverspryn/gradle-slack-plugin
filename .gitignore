@@ -1,5 +1,13 @@
-build
-.idea
-*.iml
+.classpath
 .gradle
+.idea
+.project
+.settings
+.vscode
+
+bin
+build
 local.properties
+out
+
+*.iml

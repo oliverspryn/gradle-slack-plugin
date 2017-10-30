@@ -6,14 +6,13 @@ dependencies {
 }
 
 apply plugin: 'maven'
-apply plugin: 'signing'
 
 repositories {
     mavenCentral()
 }
 
-group = 'com.github.Mindera'
-version = '1.0.7'
+group = 'com.github.oliverspryn'
+version = '1.1.0'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
@@ -31,11 +30,6 @@ artifacts {
     archives javadocJar, sourcesJar
 }
 
-// TODO signing the jar
-//signing {
-//    sign configurations.archives
-//}
-
 uploadArchives {
     repositories {
         mavenDeployer {
@@ -47,13 +41,13 @@ uploadArchives {
             pom.project {
                 name 'gradle-slack-plugin'
                 packaging 'jar'
-                description 'Gradle plugin to send messages to Slack after each build '
-                url 'https://github.com/Mindera/gradle-slack-plugin'
+                description 'A Gradle plugin which reports build errors, JUnit tests, and Jacoco coverage reports to a Slack channel Edit'
+                url 'https://github.com/oliverspryn/gradle-slack-plugin'
 
                 scm {
-                    connection 'scm:git@github.com:Mindera/gradle-slack-plugin.git'
-                    developerConnection 'scm:git@github.com:Mindera/gradle-slack-plugin.git'
-                    url 'https://github.com/Mindera/gradle-slack-plugin'
+                    connection 'scm:git@github.com:oliverspryn/gradle-slack-plugin.git'
+                    developerConnection 'scm:git@github.com:oliverspryn/gradle-slack-plugin.git'
+                    url 'https://github.com/oliverspryn/gradle-slack-plugin'
                 }
 
                 licenses {
@@ -65,9 +59,9 @@ uploadArchives {
 
                 developers {
                     developer {
-                        id 'joaoprudencio'
-                        name 'Joao Prudencio'
-                        email 'joao.prudencio@mindera.com'
+                        id 'oliverspryn'
+                        name 'Oliver Spryn'
+                        email '2717340+oliverspryn@users.noreply.github.com'
                     }
                 }
             }

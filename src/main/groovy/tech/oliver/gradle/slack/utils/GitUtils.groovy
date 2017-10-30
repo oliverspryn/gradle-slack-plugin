@@ -1,8 +1,5 @@
-package com.mindera.gradle.slack.utils
+package tech.oliver.gradle.slack.utils
 
-/**
- * Created by joaoprudencio on 06/05/15.
- */
 class GitUtils {
 
     public static String branchName() {
