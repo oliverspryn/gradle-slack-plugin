@@ -24,18 +24,39 @@ class SlackMessageBuilder {
 
     private static final String COVERAGE_REPORT = 'Unit Test Coverage Report'
 
-    static SlackMessage coverage(SlackPluginExtension configuration, double percentage) {
+    static SlackMessage coverage(SlackPluginExtension configuration, ArrayList<CoverageMetrics> metrics) {
         String color = COLOR_FAILED
-        SlackMessage message = new SlackMessage('')
+        SlackMessage message
+        double percentage = metrics.last().percentage // Last item is always the average
+
+        if(configuration.calculateAverageCoverage) {
+            message = new SlackMessage("${percentage}% Coverage")
+        } else if (!configuration.calculateAverageCoverage && metrics.size() == 2) {
+            percentage = metrics.first().percentage
+            message = new SlackMessage("${percentage}% Coverage")
+        } else {
+            message = new SlackMessage("Coverage Report")
+        }
 
         if (percentage > configuration.coverageWarn) color = COLOR_WARNING
         if (percentage > configuration.coverageGood) color = COLOR_PASSED
 
-        SlackAttachment attachment = createSingleValueAttachment(
-            COVERAGE_REPORT, "${percentage.toString()}%", color
-        )
+        SlackAttachment attachments = new SlackAttachment()
+        attachments.setColor(color)
+        attachments.setFallback('')
+        attachments.setText('')
 
-        message.addAttachments(attachment)
+        for(def coverage : metrics) {
+            if (!configuration.calculateAverageCoverage && coverage.type.toLowerCase() == "average") continue
+
+            SlackField coverageField = new SlackField()
+            coverageField.setShorten(true)
+            coverageField.setTitle(coverage.type)
+            coverageField.setValue("${coverage.percentage.toString()}%")
+            attachments.addFields(coverageField)
+        }
+
+        message.addAttachments(attachments)
         return message
     }
 
@@ -116,8 +137,8 @@ class SlackMessageBuilder {
     }
 
     static SlackMessage summary(TestResult results) {
-        SlackMessage message = new SlackMessage('')
         boolean passed = results.failedTestCount == 0
+        SlackMessage message = new SlackMessage(passed ? "All Tests Passed" : "${results.failedTestCount} Failure(s)")
 
         SlackAttachment attachments = new SlackAttachment()
         attachments.setColor(passed ? COLOR_PASSED : COLOR_FAILED)

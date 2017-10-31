@@ -1,13 +1,18 @@
 package tech.oliver.gradle.slack.models
 
 import org.gradle.api.tasks.testing.TestResult
+import tech.oliver.gradle.slack.SlackPluginExtension
 import tech.oliver.gradle.slack.utils.TwoColumnTablePrinter
 
 class ConsoleMessageBuilder {
+    static coverage(SlackPluginExtension configuration, ArrayList<CoverageMetrics> metrics) {
+        TwoColumnTablePrinter table = new TwoColumnTablePrinter("Coverage")
 
-    static coverage(double percentage) {
-        TwoColumnTablePrinter table = new TwoColumnTablePrinter("Unit Test")
-        table.addRow("Coverage", "${percentage.toString()}%")
+        for(def coverage : metrics) {
+            if (!configuration.calculateAverageCoverage && coverage.type.toLowerCase() == "average") continue
+
+            table.addRow(coverage.type, "${coverage.percentage.toString()}%")
+        }
 
         println(table.getFormattedTable())
     }
@@ -24,5 +29,4 @@ class ConsoleMessageBuilder {
 
         println(table.getFormattedTable())
     }
-
 }

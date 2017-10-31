@@ -14,6 +14,7 @@ import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
 import org.gradle.testing.jacoco.tasks.JacocoReport
 import tech.oliver.gradle.slack.models.ConsoleMessageBuilder
+import tech.oliver.gradle.slack.models.CoverageMetrics
 import tech.oliver.gradle.slack.models.SlackMessageBuilder
 
 class SlackPlugin implements Plugin<Project> {
@@ -90,24 +91,29 @@ class SlackPlugin implements Plugin<Project> {
                 JacocoReport jacoco = task as JacocoReport
 
                 try {
-                    double percentage = calculateCoveragePercentage(jacoco)
-                    message = SlackMessageBuilder.coverage(mExtension, percentage)
+                    if (mExtension.showCoverage) {
+                        def metrics = calculateCoverageMetrics(jacoco)
+                        message = SlackMessageBuilder.coverage(mExtension, metrics)
 
-                    if (mExtension.showConsoleReports)
-                        ConsoleMessageBuilder.coverage(percentage)
+                        if (mExtension.showConsoleReports)
+                            ConsoleMessageBuilder.coverage(mExtension, metrics)
+                    }
                 } catch (Exception ex) {
                     message = SlackMessageBuilder.coverageUnavailable(ex.message)
                 }
             } else if (task instanceof Test) { // Unit test summary
-                message = SlackMessageBuilder.summary(savedTestResults)
+                if (mExtension.showUnitTest) {
+                    message = SlackMessageBuilder.summary(savedTestResults)
 
-                if (mExtension.showConsoleReports)
-                    ConsoleMessageBuilder.summary(savedTestResults)
+                    if (mExtension.showConsoleReports)
+                        ConsoleMessageBuilder.summary(savedTestResults)
+                }
             } else { // Generic task
                 message = SlackMessageBuilder.generic(task, state, mTaskLogBuilder.toString())
             }
 
-            api.call(message)
+            if (message && (mExtension.showCoverage || mExtension.showUnitTest))
+                api.call(message)
         }
     }
 
@@ -122,7 +128,7 @@ class SlackPlugin implements Plugin<Project> {
 
     // https://github.com/springfox/springfox/blob/fb780ee1f14627b239fba95730a69900b9b2313a/gradle/coverage.gradle
 
-    private static double calculateCoveragePercentage(JacocoReport jacoco) {
+    private ArrayList<CoverageMetrics> calculateCoverageMetrics(JacocoReport jacoco) {
         if (!jacoco.reports.xml.isEnabled()) {
             throw new Exception("Coverage is unavailable, please enable Jacoco XML coverage reports")
         }
@@ -133,18 +139,48 @@ class SlackPlugin implements Plugin<Project> {
         parser.setFeature('http://apache.org/xml/features/disallow-doctype-decl', false)
         def xml = parser.parse(file)
 
-        def percentage = {
-            def covered = it.'@covered' as double
-            def missed = it.'@missed' as double
+        def coverage = new ArrayList<CoverageMetrics>()
 
-            return ((covered / (covered + missed)) * 100.0).round(2)
+        for(def type: mExtension.coverageTypes) {
+            def getNumbers = {
+                def covered = it.'@covered' as double
+                def missed = it.'@missed' as double
+                def percentage = ((covered / (covered + missed)) * 100.0).round(2)
+                type = type.toLowerCase().capitalize()
+
+                def metrics = new CoverageMetrics()
+                metrics.covered = covered
+                metrics.missed = missed
+                metrics.percentage = percentage
+                metrics.type = type
+
+                return metrics
+            }
+
+            def getType = xml.counter.find {
+                it.'@type' == type.toUpperCase()
+            }
+
+            coverage.add(getNumbers(getType))
         }
 
-        def metrics = xml.counter.find {
-            it.'@type' == 'INSTRUCTION'
+        // Calculate average
+
+        def percentage = 0.0
+        def total = coverage.size().doubleValue()
+
+        for(def metrics : coverage) {
+            percentage += metrics.percentage
         }
 
-        return percentage(metrics)
+        def average = new CoverageMetrics()
+        average.covered = 0
+        average.missed = 0
+        average.percentage = ((percentage / total) * 1.0).round(2)
+        average.type = 'Average'
+
+        coverage.add(average)
+
+        return coverage
     }
-
 }
