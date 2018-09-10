@@ -1,70 +1,21 @@
-apply plugin: 'groovy'
-
-dependencies {
-    compile gradleApi()
-    compile localGroovy()
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.2.51'
 }
 
-apply plugin: 'maven'
+group 'tech.oliver.gradle'
+version '2.0.0'
 
 repositories {
     mavenCentral()
 }
 
-group = 'com.github.oliverspryn'
-version = '1.1.1'
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
-
-task javadocJar(type: Jar) {
-    classifier = 'javadoc'
-    from javadoc
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
 
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
 }
-
-artifacts {
-    archives javadocJar, sourcesJar
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            repository(url: uri('../repo'))
-
-            pom.project {
-                name 'gradle-slack-plugin'
-                packaging 'jar'
-                description 'A Gradle plugin which reports build errors, JUnit tests, and Jacoco coverage reports to a Slack channel Edit'
-                url 'https://github.com/oliverspryn/gradle-slack-plugin'
-
-                scm {
-                    connection 'scm:git@github.com:oliverspryn/gradle-slack-plugin.git'
-                    developerConnection 'scm:git@github.com:oliverspryn/gradle-slack-plugin.git'
-                    url 'https://github.com/oliverspryn/gradle-slack-plugin'
-                }
-
-                licenses {
-                    license {
-                        name 'The MIT License (MIT)'
-                        url 'http://opensource.org/licenses/MIT'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id 'oliverspryn'
-                        name 'Oliver Spryn'
-                        email '2717340+oliverspryn@users.noreply.github.com'
-                    }
-                }
-            }
-        }
-    }
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
 }
